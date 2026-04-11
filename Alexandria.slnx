@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/Projektmappenelemente/">
+    <File Path="Textsamples/Wie Milliardäre die Demokratie manipuliert haben – Deine Stimme hat keinerlei Einfluss.txt" />
+  </Folder>
+  <Project Path="Alexandria.ResearchUI/Alexandria.ResearchUI.Client/Alexandria.ResearchUI.Client.csproj" Id="462002eb-dfa7-4a15-8042-92342e407346" />
+  <Project Path="Alexandria.ResearchUI/Alexandria.ResearchUI/Alexandria.ResearchUI.csproj" Id="aa85a26c-304b-4bad-accd-367de12d2622" />
+</Solution>
