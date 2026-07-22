@@ -2,6 +2,9 @@
   <Folder Name="/Projektmappenelemente/">
     <File Path="Textsamples/Wie Milliardäre die Demokratie manipuliert haben – Deine Stimme hat keinerlei Einfluss.txt" />
   </Folder>
+  <Project Path="Alexandria.Crawler.Data.Entities/Alexandria.Crawler.Data.Entities.csproj" />
+  <Project Path="Alexandria.Data.Entities/Alexandria.Data.Entities.csproj" Id="71c4ec6d-239c-4a25-8c88-089085f0ca76" />
+  <Project Path="Alexandria.Research.Application/Alexandria.Research.Application.csproj" Id="ff21f50e-f36c-40b0-a0b4-88987a5e0d58" />
   <Project Path="Alexandria.ResearchUI/Alexandria.ResearchUI.Client/Alexandria.ResearchUI.Client.csproj" Id="462002eb-dfa7-4a15-8042-92342e407346" />
   <Project Path="Alexandria.ResearchUI/Alexandria.ResearchUI/Alexandria.ResearchUI.csproj" Id="aa85a26c-304b-4bad-accd-367de12d2622" />
 </Solution>
