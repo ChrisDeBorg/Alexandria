@@ -1,10 +1,23 @@
 <Solution>
-  <Folder Name="/Projektmappenelemente/">
+  <Folder Name="/data/" />
+  <Folder Name="/docs/" />
+  <Folder Name="/src/">
+    <Project Path="Alexandria.ResearchUI/Alexandria.ResearchUI.Client/Alexandria.ResearchUI.Client.csproj" Id="462002eb-dfa7-4a15-8042-92342e407346" />
+    <Project Path="Alexandria.ResearchUI/Alexandria.ResearchUI/Alexandria.ResearchUI.csproj" Id="aa85a26c-304b-4bad-accd-367de12d2622" />
+    <Project Path="src/Alexandria.Application/Alexandria.Application.csproj" Id="b645a7bd-72cd-46f3-89f1-8cf875b3a3d5" />
+    <Project Path="src/Alexandria.Domain/Alexandria.Domain.csproj" Id="54108336-c16d-43c2-a604-61ba64eb1fd1" />
+    <Project Path="src/Alexandria.Infrastructure/Alexandria.Infrastructure.csproj" Id="de682dd9-6620-4155-b332-2602053fb29b" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Alexandria.Application.Tests/Alexandria.Application.Tests.csproj" Id="742f4e84-d532-4d63-9de5-c9374a52dd51" />
+    <Project Path="tests/Alexandria.Domain.Tests/Alexandria.Domain.Tests.csproj" Id="bc553fcc-6c65-4209-a4e5-19fcafdb993a" />
+  </Folder>
+  <Folder Name="/textsamples/">
     <File Path="Textsamples/Wie Milliardäre die Demokratie manipuliert haben – Deine Stimme hat keinerlei Einfluss.txt" />
   </Folder>
-  <Project Path="Alexandria.Crawler.Data.Entities/Alexandria.Crawler.Data.Entities.csproj" />
-  <Project Path="Alexandria.Data.Entities/Alexandria.Data.Entities.csproj" Id="71c4ec6d-239c-4a25-8c88-089085f0ca76" />
-  <Project Path="Alexandria.Research.Application/Alexandria.Research.Application.csproj" Id="ff21f50e-f36c-40b0-a0b4-88987a5e0d58" />
-  <Project Path="Alexandria.ResearchUI/Alexandria.ResearchUI.Client/Alexandria.ResearchUI.Client.csproj" Id="462002eb-dfa7-4a15-8042-92342e407346" />
-  <Project Path="Alexandria.ResearchUI/Alexandria.ResearchUI/Alexandria.ResearchUI.csproj" Id="aa85a26c-304b-4bad-accd-367de12d2622" />
+  <Folder Name="/zRef/">
+    <Project Path="Alexandria.Crawler.Data.Entities/Alexandria.Crawler.Data.Entities.csproj" />
+    <Project Path="Alexandria.Data.Entities/Alexandria.Data.Entities.csproj" Id="71c4ec6d-239c-4a25-8c88-089085f0ca76" />
+    <Project Path="Alexandria.Research.Application/Alexandria.Research.Application.csproj" Id="ff21f50e-f36c-40b0-a0b4-88987a5e0d58" />
+  </Folder>
 </Solution>

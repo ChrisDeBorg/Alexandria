@@ -8,8 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Alexandria.Application\Alexandria.Application.csproj" />
+    <ProjectReference Include="..\..\src\Alexandria.Domain\Alexandria.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Alexandria.Infrastructure\Alexandria.Infrastructure.csproj" />
     <ProjectReference Include="..\Alexandria.ResearchUI.Client\Alexandria.ResearchUI.Client.csproj" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.15" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.15" />
   </ItemGroup>
 
 </Project>
