@@ -1,9 +1,8 @@
-﻿namespace Alexandria.Domain.Entities
+﻿namespace Alexandria.Domain.Entities;
+
+public enum GenderType
 {
-    public enum GenderType
-    {
-        Female,
-        Male,
-        OtherMentalIllness,
-    }
+    Female,
+    Male,
+    OtherMentalIllness,
 }

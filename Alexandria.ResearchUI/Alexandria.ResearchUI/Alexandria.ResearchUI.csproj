@@ -1,15 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <UserSecretsId>bc0adba6-5b44-4a41-b419-66b9ba0aa219</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Alexandria.Application\Alexandria.Application.csproj" />
-    <ProjectReference Include="..\..\src\Alexandria.Domain\Alexandria.Domain.csproj" />
     <ProjectReference Include="..\..\src\Alexandria.Infrastructure\Alexandria.Infrastructure.csproj" />
     <ProjectReference Include="..\Alexandria.ResearchUI.Client\Alexandria.ResearchUI.Client.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.15" />

@@ -11,6 +11,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Alexandria.Application.Tests/Alexandria.Application.Tests.csproj" Id="742f4e84-d532-4d63-9de5-c9374a52dd51" />
     <Project Path="tests/Alexandria.Domain.Tests/Alexandria.Domain.Tests.csproj" Id="bc553fcc-6c65-4209-a4e5-19fcafdb993a" />
+    <Project Path="tests/Alexandria.Infrastructure.tests/Alexandria.Infrastructure.tests.csproj" Id="1359f0d9-82f8-4355-9dc4-036fd560ed7b" />
   </Folder>
   <Folder Name="/textsamples/">
     <File Path="Textsamples/Wie Milliardäre die Demokratie manipuliert haben – Deine Stimme hat keinerlei Einfluss.txt" />

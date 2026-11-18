@@ -6,18 +6,12 @@ public class Entity : BaseEntity
 {
     public Entity() { }
 
-    public Entity(string name, string entityType) : base(name, entityType)
-    {
-        Discriminator = "BaseEntity:Entity";
-        Name = name;
-    }
+    public Entity(string name) : base(name) { }
 
-    public string? ShortName { get; set; } // "JFK", "IWF", "BlackRock"
+    public string? ShortName { get; set; }
 
     public bool IsVerified { get; set; } = false;
 
-    public ICollection<Relation> Outgoing { get; set; } = [];
-    public ICollection<Relation> Incoming { get; set; } = [];
+    //public ICollection<Relation> Outgoing { get; set; } = [];
+    //public ICollection<Relation> Incoming { get; set; } = [];
 }
-
-

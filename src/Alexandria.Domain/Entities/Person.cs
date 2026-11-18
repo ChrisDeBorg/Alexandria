@@ -7,11 +7,9 @@ public class Person : Entity
 {
     public Person()
     {
-        Discriminator = "BaseEntity:Person";
     }
-    public Person(string name) : base(name, "Person")
+    public Person(string name) : base(name)
     {
-        Discriminator = "BaseEntity:Person";
     }
     public DateOnly? BirthDate { get; set; }
     public DateOnly? DeathDate { get; set; }          // Optional, for deceased persons

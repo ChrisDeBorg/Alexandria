@@ -1,5 +1,9 @@
+using Alexandria.Application.Abstractions;
+using Alexandria.Application.Entities;
+using Alexandria.Infrastructure.Persistence.PostgreSql;
 using Alexandria.ResearchUI.Client.Pages;
 using Alexandria.ResearchUI.Components;
+using Microsoft.EntityFrameworkCore;
 
 namespace Alexandria.ResearchUI
 {
@@ -14,8 +18,20 @@ namespace Alexandria.ResearchUI
                 .AddInteractiveServerComponents()
                 .AddInteractiveWebAssemblyComponents();
 
+            var connectionString =
+                builder.Configuration.GetConnectionString("Alexandria")
+                ?? throw new InvalidOperationException(
+                    "Connection string 'Alexandria' is missing.");
+
+            builder.Services.AddDbContext<AlexandriaDbContext>(options =>
+                options.UseNpgsql(connectionString));
+
+            builder.Services.AddScoped<IEntityStore, EntityStore>();
+            builder.Services.AddScoped<IEntityService, EntityService>();
+
             var app = builder.Build();
 
+           
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
