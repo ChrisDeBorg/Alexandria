@@ -1,6 +1,7 @@
 ﻿
 using Alexandria.Application.Relations;
 using Alexandria.Domain.Entities;
+using Alexandria.Domain.Ontology;
 using Alexandria.Domain.Relations;
 using Alexandria.Infrastructure.Persistence.PostgreSql;
 using Microsoft.EntityFrameworkCore;
@@ -33,14 +34,19 @@ public class RelationServiceTests
         await using var transaction =
             await context.Database.BeginTransactionAsync();
 
+        var entityType = new EntityType("TestRelationEntity");
+
+        context.EntityTypes.Add(entityType);
+        await context.SaveChangesAsync();
+
         var source = new BaseEntity("Test Source")
         {
-            EntityTypeId = Guid.NewGuid()
+            EntityTypeId = entityType.Id
         };
 
         var target = new BaseEntity("Test Target")
         {
-            EntityTypeId = Guid.NewGuid()
+            EntityTypeId = entityType.Id
         };
 
         var relationType = new RelationType(

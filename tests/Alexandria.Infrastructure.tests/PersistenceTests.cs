@@ -1,4 +1,4 @@
-﻿
+﻿using Alexandria.Domain.Ontology;
 using Alexandria.Domain.Entities;
 using Alexandria.Domain.Relations;
 using Alexandria.Infrastructure.Persistence.PostgreSql;
@@ -34,9 +34,15 @@ public class PersistenceTests
         await using var transaction =
             await context.Database.BeginTransactionAsync();
 
+        var personType = new EntityType("TestPersonType");
+        var organizationType = new EntityType("TestOrganizationType");
+
+        context.EntityTypes.AddRange(personType, organizationType);
+        await context.SaveChangesAsync();
+        
         var person = new Person("Max Mustermann")
         {
-            EntityTypeId = Guid.NewGuid(),
+            EntityTypeId = personType.Id,
             GivenName = "Max",
             FamilyName = "Mustermann",
             BirthDate = new DateOnly(1980, 5, 12),
@@ -46,7 +52,7 @@ public class PersistenceTests
 
         var organization = new Organization("Alexandria Test GmbH")
         {
-            EntityTypeId = Guid.NewGuid(),
+            EntityTypeId = organizationType.Id,
             FoundingDate = new DateOnly(2020, 1, 1),
             Website = "https://example.org"
         };

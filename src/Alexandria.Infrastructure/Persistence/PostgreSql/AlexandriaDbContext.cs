@@ -2,6 +2,7 @@
 using Alexandria.Domain.Entities;
 using Alexandria.Domain.Relations;
 using Microsoft.EntityFrameworkCore;
+using Alexandria.Domain.Ontology;
 
 namespace Alexandria.Infrastructure.Persistence.PostgreSql;
 
@@ -14,6 +15,7 @@ public sealed class AlexandriaDbContext(
     public DbSet<Person> Persons => Set<Person>();
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<Company> Companies => Set<Company>();
+    public DbSet<EntityType> EntityTypes => Set<EntityType>();
 
     public DbSet<Relation> Relations => Set<Relation>();
     public DbSet<RelationType> RelationTypes => Set<RelationType>();
@@ -23,8 +25,46 @@ public sealed class AlexandriaDbContext(
         base.OnModelCreating(modelBuilder);
 
         ConfigureEntities(modelBuilder);
+        ConfigureEntityTypes(modelBuilder);
         ConfigureRelations(modelBuilder);
         ConfigureRelationTypes(modelBuilder);
+    }
+
+
+    private static void ConfigureEntityTypes(ModelBuilder modelBuilder)
+    {
+        var entityType = modelBuilder.Entity<EntityType>();
+
+        entityType.ToTable("EntityTypes");
+        entityType.HasKey(x => x.Id);
+
+        entityType.Property(x => x.Id)
+            .ValueGeneratedNever();
+
+        entityType.Property(x => x.Name)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        entityType.Property(x => x.DisplayName)
+            .HasMaxLength(200);
+
+        entityType.Property(x => x.Description)
+            .HasMaxLength(4000);
+
+        entityType.Property(x => x.CreatedAt)
+            .IsRequired();
+
+        entityType.Property(x => x.UpdatedAt);
+
+        entityType.HasIndex(x => x.Name)
+            .IsUnique();
+
+        // Optionale Hierarchie: Ein EntityType kann
+        // später einem übergeordneten Typ zugeordnet werden.
+        entityType.HasOne<EntityType>()
+            .WithMany()
+            .HasForeignKey("ParentTypeId")
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     private static void ConfigureEntities(ModelBuilder modelBuilder)
@@ -75,6 +115,11 @@ public sealed class AlexandriaDbContext(
             //e.Ignore(x => x.Outgoing);
             //e.Ignore(x => x.Incoming);
         });
+
+        entity.HasOne<EntityType>()
+            .WithMany()
+            .HasForeignKey(x => x.EntityTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Person>(e =>
         {

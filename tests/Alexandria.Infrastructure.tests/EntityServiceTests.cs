@@ -1,4 +1,4 @@
-﻿
+﻿using Alexandria.Domain.Ontology;
 using Alexandria.Application.Entities;
 using Alexandria.Infrastructure.Persistence.PostgreSql;
 using Microsoft.EntityFrameworkCore;
@@ -35,7 +35,14 @@ public class EntityServiceTests
         var entityStore = new EntityStore(context);
         var entityService = new EntityService(entityStore);
 
-        var entityTypeId = Guid.NewGuid();
+        var entityType = new EntityType(
+                "TestEntity",
+                "Test Entity");
+
+        context.EntityTypes.Add(entityType);
+        await context.SaveChangesAsync();
+
+        var entityTypeId = entityType.Id;
 
         // CREATE
         var created = await entityService.CreateAsync(

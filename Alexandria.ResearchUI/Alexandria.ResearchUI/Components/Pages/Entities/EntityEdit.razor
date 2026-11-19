@@ -1,0 +1,305 @@
+﻿@page "/entities/{Id:guid}/edit"
+@rendermode InteractiveServer
+
+@using System.ComponentModel.DataAnnotations
+@using Alexandria.Application.Abstractions
+@using Alexandria.Application.Entities
+@using Alexandria.Application.EntityTypes
+
+@inject IEntityService EntityService
+@inject IEntityTypeService EntityTypeService
+@inject NavigationManager Navigation
+
+<PageTitle>Entity bearbeiten – Alexandria</PageTitle>
+
+<h1>Entity bearbeiten</h1>
+
+@if (isLoading)
+{
+    <p>Entity wird geladen ...</p>
+}
+else if (notFound)
+{
+    <div class="alert alert-warning">
+        Die angeforderte Entity wurde nicht gefunden.
+    </div>
+
+    <button class="btn btn-outline-primary" @onclick="Cancel">
+        Zurück zur Übersicht
+    </button>
+}
+else
+{
+    @if (errorMessage is not null)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <EditForm Model="model" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label class="form-label" for="name">Name</label>
+            <InputText id="name"
+                       class="form-control"
+                       @bind-Value="model.Name" />
+            <ValidationMessage For="@(() => model.Name)" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="description">Beschreibung</label>
+            <InputTextArea id="description"
+                           class="form-control"
+                           rows="4"
+                           @bind-Value="model.Description" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="entityTypeId">EntityType</label>
+
+            <InputSelect id="entityTypeId"
+                         class="form-select"
+                         @bind-Value="model.EntityTypeId">
+                <option value="@Guid.Empty">Bitte EntityType auswählen</option>
+
+                @foreach (var entityType in entityTypes)
+                {
+                    <option value="@entityType.Id">
+                        @(string.IsNullOrWhiteSpace(entityType.DisplayName)
+                            ? entityType.Name
+                            : entityType.DisplayName)
+                    </option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <button type="button"
+                    class="btn btn-outline-secondary btn-sm"
+                    @onclick="ToggleNewEntityType">
+                @(showNewEntityType ? "Abbrechen" : "Neuen EntityType anlegen")
+            </button>
+        </div>
+
+        @if (showNewEntityType)
+        {
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Neuen EntityType anlegen</h5>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="newEntityTypeName">
+                            Name *
+                        </label>
+                        <InputText id="newEntityTypeName"
+                                   class="form-control"
+                                   @bind-Value="newEntityTypeName" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="newEntityTypeDisplayName">
+                            Anzeigename
+                        </label>
+                        <InputText id="newEntityTypeDisplayName"
+                                   class="form-control"
+                                   @bind-Value="newEntityTypeDisplayName" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="newEntityTypeDescription">
+                            Beschreibung
+                        </label>
+                        <InputTextArea id="newEntityTypeDescription"
+                                       class="form-control"
+                                       rows="2"
+                                       @bind-Value="newEntityTypeDescription" />
+                    </div>
+
+                    <button type="button"
+                            class="btn btn-primary btn-sm"
+                            disabled="@isCreatingEntityType"
+                            @onclick="CreateEntityTypeAsync">
+                        @(isCreatingEntityType
+                            ? "Wird angelegt ..."
+                            : "EntityType anlegen")
+                    </button>
+                </div>
+            </div>
+        }
+
+        <p class="text-muted small">
+            ID: @Id
+        </p>
+
+        <button type="submit"
+                class="btn btn-primary"
+                disabled="@isSaving">
+            @(isSaving ? "Wird gespeichert ..." : "Änderungen speichern")
+        </button>
+
+        <button type="button"
+                class="btn btn-outline-secondary ms-2"
+                @onclick="Cancel">
+            Abbrechen
+        </button>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private readonly EntityFormModel model = new();
+
+    private List<EntityTypeDto> entityTypes = [];
+
+    private bool isLoading = true;
+    private bool isSaving;
+    private bool isCreatingEntityType;
+    private bool notFound;
+    private bool showNewEntityType;
+
+    private string? errorMessage;
+
+    private string newEntityTypeName = string.Empty;
+    private string? newEntityTypeDisplayName;
+    private string? newEntityTypeDescription;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        notFound = false;
+        errorMessage = null;
+
+        try
+        {
+            entityTypes = (await EntityTypeService.GetAllAsync()).ToList();
+
+            var entity = await EntityService.GetByIdAsync(Id);
+
+            if (entity is null)
+            {
+                notFound = true;
+                return;
+            }
+
+            model.Name = entity.Name;
+            model.Description = entity.Description;
+            model.EntityTypeId = entity.EntityTypeId;
+        }
+        catch (Exception)
+        {
+            errorMessage = "Die Entity konnte nicht geladen werden.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task CreateEntityTypeAsync()
+    {
+        errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(newEntityTypeName))
+        {
+            errorMessage = "Bitte einen Namen für den EntityType eingeben.";
+            return;
+        }
+
+        isCreatingEntityType = true;
+
+        try
+        {
+            var created = await EntityTypeService.CreateAsync(
+                new CreateEntityTypeRequest(
+                    newEntityTypeName.Trim(),
+                    string.IsNullOrWhiteSpace(newEntityTypeDisplayName)
+                        ? null
+                        : newEntityTypeDisplayName.Trim(),
+                    string.IsNullOrWhiteSpace(newEntityTypeDescription)
+                        ? null
+                        : newEntityTypeDescription.Trim()));
+
+            entityTypes = (await EntityTypeService.GetAllAsync()).ToList();
+
+            model.EntityTypeId = created.Id;
+
+            newEntityTypeName = string.Empty;
+            newEntityTypeDisplayName = null;
+            newEntityTypeDescription = null;
+
+            showNewEntityType = false;
+        }
+        catch (Exception)
+        {
+            errorMessage = "Der EntityType konnte nicht angelegt werden.";
+        }
+        finally
+        {
+            isCreatingEntityType = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        errorMessage = null;
+
+        if (model.EntityTypeId == Guid.Empty)
+        {
+            errorMessage = "Bitte einen EntityType auswählen.";
+            return;
+        }
+
+        isSaving = true;
+
+        try
+        {
+            var updated = await EntityService.UpdateAsync(
+                Id,
+                new UpdateEntityRequest(
+                    model.Name,
+                    model.Description,
+                    model.EntityTypeId));
+
+            if (updated is null)
+            {
+                notFound = true;
+                return;
+            }
+
+            Navigation.NavigateTo("/entities");
+        }
+        catch (Exception)
+        {
+            errorMessage = "Die Entity konnte nicht aktualisiert werden.";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void ToggleNewEntityType()
+    {
+        showNewEntityType = !showNewEntityType;
+        errorMessage = null;
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/entities");
+    }
+
+    private sealed class EntityFormModel
+    {
+        [Required(ErrorMessage = "Bitte einen Namen eingeben.")]
+        [StringLength(250)]
+        public string Name { get; set; } = string.Empty;
+
+        public string? Description { get; set; }
+
+        public Guid EntityTypeId { get; set; }
+    }
+}

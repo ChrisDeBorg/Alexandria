@@ -1,5 +1,6 @@
 using Alexandria.Application.Abstractions;
 using Alexandria.Application.Entities;
+using Alexandria.Application.EntityTypes;
 using Alexandria.Application.Relations;
 using Alexandria.Infrastructure.Persistence.PostgreSql;
 using Alexandria.ResearchUI.Client.Pages;
@@ -31,6 +32,8 @@ namespace Alexandria.ResearchUI
             builder.Services.AddScoped<IEntityService, EntityService>();
             builder.Services.AddScoped<IRelationStore, RelationStore>();
             builder.Services.AddScoped<IRelationService, RelationService>();
+            builder.Services.AddScoped<IEntityTypeService, EntityTypeService>(); 
+            builder.Services.AddScoped<IEntityTypeStore, EntityTypeStore>();
 
             var app = builder.Build();
 

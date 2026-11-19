@@ -9,7 +9,6 @@
   <ItemGroup>
     <Folder Include="Evidences\" />
     <Folder Include="Researches\" />
-    <Folder Include="Ontology\" />
   </ItemGroup>
 
 </Project>

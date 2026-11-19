@@ -1,0 +1,172 @@
+﻿@page "/entities"
+@rendermode InteractiveServer
+
+@using Alexandria.Application.Abstractions
+@using Alexandria.Application.Entities
+@inject IEntityService EntityService
+
+<PageTitle>Entities – Alexandria</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Entities</h1>
+
+    <a href="/entities/create" class="btn btn-primary">
+        Neue Entity
+    </a>
+</div>
+
+<p class="text-muted">
+    Übersicht aller in Alexandria gespeicherten Entitäten.
+</p>
+
+<div class="mb-3">
+    <input class="form-control"
+           placeholder="Nach Namen suchen ..."
+           @bind="searchText"
+           @bind:event="oninput" />
+</div>
+
+@if (isLoading)
+{
+    <p>Entitäten werden geladen ...</p>
+}
+else if (loadError is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        @loadError
+    </div>
+    <button class="btn btn-outline-primary" @onclick="LoadEntitiesAsync">
+        Erneut versuchen
+    </button>
+}
+else
+{
+    <div class="row">
+        <div class="col-lg-8">
+            <p>@FilteredEntities.Count() Entität(en)</p>
+
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Beschreibung</th>
+                        <th>Erstellt</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entity in FilteredEntities)
+                    {
+                        <tr class="@(selectedEntity?.Id == entity.Id ? "table-primary" : "")"
+                            role="button"
+                            @onclick="() => SelectEntity(entity)">
+                            <td>@entity.Name</td>
+                            <td>@entity.Description</td>
+                            <td>@entity.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy")</td>
+                            <td>
+                                <a href="@($"/entities/{entity.Id}/edit")"
+                                   class="btn btn-sm btn-outline-primary"
+                                   @onclick:stopPropagation="true">
+                                    Bearbeiten
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @if (!FilteredEntities.Any())
+            {
+                <p class="text-muted">Keine passenden Entitäten gefunden.</p>
+            }
+        </div>
+
+        <div class="col-lg-4">
+            @if (selectedEntity is not null)
+            {
+                <div class="card">
+                    <div class="card-header">
+                        Ausgewählte Entity
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">@selectedEntity.Name</h5>
+
+                        <p>@selectedEntity.Description</p>
+
+                        <dl>
+                            <dt>ID</dt>
+                            <dd class="text-break">@selectedEntity.Id</dd>
+
+                            <dt>EntityTypeId</dt>
+                            <dd class="text-break">@selectedEntity.EntityTypeId</dd>
+
+                            <dt>Erstellt</dt>
+                            <dd>@selectedEntity.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</dd>
+
+                            <dt>Zuletzt geändert</dt>
+                            <dd>
+                                @(selectedEntity.UpdatedAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "–")
+                            </dd>
+
+                        </dl>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted">
+                    Wähle eine Entität aus der Liste aus, um ihre Details anzuzeigen.
+                </p>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private IReadOnlyList<EntityDto> entities = [];
+    private EntityDto? selectedEntity;
+    private string searchText = string.Empty;
+    private bool isLoading = true;
+    private string? loadError;
+
+    private IEnumerable<EntityDto> FilteredEntities =>
+        entities.Where(entity =>
+            entity.Name.Contains(
+                searchText,
+                StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEntitiesAsync();
+    }
+
+    private async Task LoadEntitiesAsync()
+    {
+        isLoading = true;
+        loadError = null;
+
+        try
+        {
+            entities = await EntityService.GetAllAsync();
+
+            if (selectedEntity is not null)
+            {
+                selectedEntity = entities.FirstOrDefault(
+                    x => x.Id == selectedEntity.Id);
+            }
+        }
+        catch (Exception)
+        {
+            loadError = "Die Entitäten konnten nicht geladen werden. Bitte prüfe die Verbindung zur Datenbank.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void SelectEntity(EntityDto entity)
+    {
+        selectedEntity = entity;
+    }
+}
