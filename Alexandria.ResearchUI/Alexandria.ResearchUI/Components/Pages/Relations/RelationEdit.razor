@@ -1,0 +1,332 @@
+﻿@page "/relations/{Id:guid}/edit"
+@rendermode InteractiveServer
+
+@using Alexandria.Application.Abstractions
+@using Alexandria.Application.Entities
+@using Alexandria.Application.Relations
+
+@inject IRelationService RelationService
+@inject IEntityService EntityService
+@inject IRelationTypeService RelationTypeService
+@inject NavigationManager Navigation
+
+<PageTitle>Relation bearbeiten – Alexandria</PageTitle>
+
+<h1>Relation bearbeiten</h1>
+
+@if (isLoading)
+{
+    <p>Relation wird geladen ...</p>
+}
+else if (notFound)
+{
+    <div class="alert alert-warning">
+        Die angeforderte Relation wurde nicht gefunden.
+    </div>
+
+    <button class="btn btn-outline-primary" @onclick="Cancel">
+        Zurück zur Übersicht
+    </button>
+}
+else
+{
+    @if (errorMessage is not null)
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+        </div>
+    }
+
+    @if (errors.Count > 0)
+    {
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach (var error in errors)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <EditForm Model="model" OnSubmit="SaveAsync">
+
+        <div class="mb-3">
+            <label class="form-label" for="sourceEntity">
+                Source Entity
+            </label>
+
+            <InputSelect id="sourceEntity"
+                         class="form-select"
+                         @bind-Value="model.SourceEntityId">
+                <option value="@Guid.Empty">
+                    Bitte auswählen ...
+                </option>
+
+                @foreach (var entity in entities.OrderBy(x => x.Name))
+                {
+                    <option value="@entity.Id">
+                        @entity.Name
+                    </option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="relationType">
+                RelationType
+            </label>
+
+            <InputSelect id="relationType"
+                         class="form-select"
+                         @bind-Value="model.RelationTypeId">
+                <option value="@Guid.Empty">
+                    Bitte auswählen ...
+                </option>
+
+                @foreach (var relationType in relationTypes.OrderBy(x => x.DisplayName))
+                {
+                    <option value="@relationType.Id">
+                        @GetRelationTypeName(relationType)
+                    </option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="targetEntity">
+                Target Entity
+            </label>
+
+            <InputSelect id="targetEntity"
+                         class="form-select"
+                         @bind-Value="model.TargetEntityId">
+                <option value="@Guid.Empty">
+                    Bitte auswählen ...
+                </option>
+
+                @foreach (var entity in entities.OrderBy(x => x.Name))
+                {
+                    <option value="@entity.Id">
+                        @entity.Name
+                    </option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label" for="validFrom">
+                    Gültig ab
+                </label>
+
+                <InputDate id="validFrom"
+                           class="form-control"
+                           @bind-Value="model.ValidFrom" />
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label" for="validTo">
+                    Gültig bis
+                </label>
+
+                <InputDate id="validTo"
+                           class="form-control"
+                           @bind-Value="model.ValidTo" />
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="context">
+                Context
+            </label>
+
+            <InputTextArea id="context"
+                           class="form-control"
+                           rows="4"
+                           @bind-Value="model.Context" />
+        </div>
+
+        <div class="form-check mb-4">
+            <InputCheckbox id="isInferred"
+                           class="form-check-input"
+                           @bind-Value="model.IsInferred" />
+
+            <label class="form-check-label" for="isInferred">
+                Abgeleitete Relation (IsInferred)
+            </label>
+        </div>
+
+        <p class="text-muted small">
+            ID: @Id
+        </p>
+
+        <button type="submit"
+                class="btn btn-primary"
+                disabled="@isSaving">
+            @(isSaving ? "Wird gespeichert ..." : "Änderungen speichern")
+        </button>
+
+        <button type="button"
+                class="btn btn-outline-secondary ms-2"
+                @onclick="Cancel">
+            Abbrechen
+        </button>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private readonly RelationEditFormModel model = new();
+
+    private IReadOnlyList<EntityDto> entities = [];
+    private IReadOnlyList<RelationTypeDto> relationTypes = [];
+
+    private bool isLoading = true;
+    private bool isSaving;
+    private bool notFound;
+
+    private string? errorMessage;
+    private List<string> errors = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        notFound = false;
+        errorMessage = null;
+        errors.Clear();
+
+        try
+        {
+            // Sequenziell laden, da die Services denselben
+            // Scoped DbContext verwenden können.
+            entities = await EntityService.GetAllAsync();
+
+            relationTypes = await RelationTypeService.GetAllAsync();
+
+            var relation = await RelationService.GetByIdAsync(Id);
+
+            if (relation is null)
+            {
+                notFound = true;
+                return;
+            }
+
+            model.SourceEntityId = relation.SourceEntityId;
+            model.TargetEntityId = relation.TargetEntityId;
+            model.RelationTypeId = relation.RelationTypeId;
+
+            model.ValidFrom = relation.ValidFrom;
+            model.ValidTo = relation.ValidTo;
+
+            model.Context = relation.Context;
+            model.IsInferred = relation.IsInferred;
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Die Relation konnte nicht geladen werden: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SaveAsync(
+        Microsoft.AspNetCore.Components.Forms.EditContext editContext)
+    {
+        errorMessage = null;
+        errors.Clear();
+
+        if (model.SourceEntityId == Guid.Empty)
+            errors.Add("Bitte eine Source Entity auswählen.");
+
+        if (model.TargetEntityId == Guid.Empty)
+            errors.Add("Bitte eine Target Entity auswählen.");
+
+        if (model.RelationTypeId == Guid.Empty)
+            errors.Add("Bitte einen RelationType auswählen.");
+
+        if (model.SourceEntityId != Guid.Empty &&
+            model.SourceEntityId == model.TargetEntityId)
+        {
+            errors.Add(
+                "Source und Target Entity dürfen nicht identisch sein.");
+        }
+
+        if (model.ValidFrom.HasValue &&
+            model.ValidTo.HasValue &&
+            model.ValidTo.Value < model.ValidFrom.Value)
+        {
+            errors.Add(
+                "Das Enddatum darf nicht vor dem Startdatum liegen.");
+        }
+
+        if (errors.Count > 0)
+            return;
+
+        isSaving = true;
+
+        try
+        {
+            var request = new UpdateRelationRequest(
+                model.SourceEntityId,
+                model.TargetEntityId,
+                model.RelationTypeId,
+                model.ValidFrom,
+                model.ValidTo,
+                string.IsNullOrWhiteSpace(model.Context)
+                    ? null
+                    : model.Context.Trim(),
+                model.IsInferred);
+
+            var updated = await RelationService.UpdateAsync(Id, request);
+
+            if (updated is null)
+            {
+                notFound = true;
+                return;
+            }
+
+            Navigation.NavigateTo("/relations");
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Die Relation konnte nicht aktualisiert werden: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private static string GetRelationTypeName(
+        RelationTypeDto relationType)
+    {
+        return string.IsNullOrWhiteSpace(relationType.DisplayName)
+            ? relationType.Name
+            : relationType.DisplayName;
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/relations");
+    }
+
+    private sealed class RelationEditFormModel
+    {
+        public Guid SourceEntityId { get; set; }
+        public Guid TargetEntityId { get; set; }
+        public Guid RelationTypeId { get; set; }
+
+        public DateOnly? ValidFrom { get; set; }
+        public DateOnly? ValidTo { get; set; }
+
+        public string? Context { get; set; }
+        public bool IsInferred { get; set; }
+    }
+}

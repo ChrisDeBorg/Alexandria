@@ -34,6 +34,8 @@ namespace Alexandria.ResearchUI
             builder.Services.AddScoped<IRelationService, RelationService>();
             builder.Services.AddScoped<IEntityTypeService, EntityTypeService>(); 
             builder.Services.AddScoped<IEntityTypeStore, EntityTypeStore>();
+            builder.Services.AddScoped<IRelationTypeStore, RelationTypeStore>();
+            builder.Services.AddScoped<IRelationTypeService, RelationTypeService>();
 
             var app = builder.Build();
 

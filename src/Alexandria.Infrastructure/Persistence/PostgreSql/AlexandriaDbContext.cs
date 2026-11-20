@@ -218,5 +218,12 @@ public sealed class AlexandriaDbContext(
             .WithMany()
             .HasForeignKey(x => x.InverseRelationTypeId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Optionale Hierarchie: Ein RelationType kann
+        // einem übergeordneten RelationType zugeordnet werden.
+        relationType.HasOne<RelationType>()
+            .WithMany()
+            .HasForeignKey(x => x.ParentRelationTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -1,0 +1,490 @@
+﻿@page "/relations/create"
+@rendermode InteractiveServer
+
+@using Alexandria.Application.Abstractions
+@using Alexandria.Application.Entities
+@using Alexandria.Application.Relations
+
+@inject IRelationService RelationService
+@inject IEntityService EntityService
+@inject IRelationTypeService RelationTypeService
+@inject NavigationManager Navigation
+
+<PageTitle>Neue Relation – Alexandria</PageTitle>
+
+<h1>Neue Relation</h1>
+
+<p class="text-muted">
+    Definiere eine Beziehung zwischen zwei Entities.
+</p>
+
+@if (isLoading)
+{
+    <p>Stammdaten werden geladen ...</p>
+}
+else if (loadError is not null)
+{
+    <div class="alert alert-danger">
+        @loadError
+    </div>
+
+    <button class="btn btn-secondary" @onclick="LoadDataAsync">
+        Erneut versuchen
+    </button>
+}
+else
+{
+    @if (errors.Count > 0)
+    {
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach (var error in errors)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <EditForm Model="formModel" OnSubmit="CreateAsync">
+
+        <div class="mb-3">
+            <label class="form-label" for="sourceEntity">
+                Source Entity
+            </label>
+
+            <select id="sourceEntity"
+                    class="form-select"
+                    @bind="formModel.SourceEntityId">
+                <option value="@Guid.Empty">
+                    Bitte auswählen ...
+                </option>
+
+                @foreach (var entity in entities.OrderBy(e => e.Name))
+                {
+                    <option value="@entity.Id">
+                        @entity.Name
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="relationType">
+                RelationType
+            </label>
+
+            <select id="relationType"
+                    class="form-select"
+                    @bind="formModel.RelationTypeId">
+                <option value="@Guid.Empty">
+                    Bitte auswählen ...
+                </option>
+
+                @foreach (var relationType in relationTypes.OrderBy(r => r.DisplayName))
+                {
+                    <option value="@relationType.Id">
+                        @GetRelationTypeName(relationType)
+                    </option>
+                }
+            </select>
+        </div>
+
+        <button type="button"
+                class="btn btn-outline-primary mb-3"
+                @onclick="ToggleNewRelationType">
+            @(showNewRelationType
+                ? "Neuanlage abbrechen"
+                : "Neuen RelationType anlegen")
+        </button>
+
+        @if (showNewRelationType)
+        {
+            <div class="card card-body mb-4">
+                <h5>Neuen RelationType anlegen</h5>
+
+                @if (relationTypeError is not null)
+                {
+                    <div class="alert alert-danger">
+                        @relationTypeError
+                    </div>
+                }
+
+                <div class="mb-3">
+                    <label class="form-label" for="newRelationTypeName">
+                        Name *
+                    </label>
+
+                    <InputText id="newRelationTypeName"
+                               class="form-control"
+                               @bind-Value="newRelationTypeModel.Name"
+                               placeholder="z. B. presidentOf" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="newRelationTypeDisplayName">
+                        DisplayName
+                    </label>
+
+                    <InputText id="newRelationTypeDisplayName"
+                               class="form-control"
+                               @bind-Value="newRelationTypeModel.DisplayName"
+                               placeholder="z. B. ist Präsident von" />
+                    <div class="form-text">
+                        Wird kein DisplayName angegeben, wird der Name verwendet.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="newRelationTypeDescription">
+                        Beschreibung
+                    </label>
+
+                    <InputTextArea id="newRelationTypeDescription"
+                                   class="form-control"
+                                   rows="3"
+                                   @bind-Value="newRelationTypeModel.Description" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="parentRelationType">
+                        Übergeordneter RelationType
+                    </label>
+
+                    <InputSelect id="parentRelationType"
+                                 class="form-select"
+                                 @bind-Value="newRelationTypeModel.ParentRelationTypeId">
+                        <option value="">
+                            Kein übergeordneter Typ
+                        </option>
+
+                        @foreach (var relationType in relationTypes.OrderBy(r => r.DisplayName))
+                        {
+                            <option value="@relationType.Id">
+                                @GetRelationTypeName(relationType)
+                            </option>
+                        }
+                    </InputSelect>
+
+                    <div class="form-text">
+                        Optional. Ordnet diesen RelationType einem bestehenden Typ unter.
+                    </div>
+                </div>
+
+                <div class="form-check mb-2">
+                    <InputCheckbox id="newIsSymmetric"
+                                   class="form-check-input"
+                                   @bind-Value="newRelationTypeModel.IsSymmetric" />
+
+                    <label class="form-check-label" for="newIsSymmetric">
+                        Symmetrisch
+                    </label>
+                </div>
+
+                <div class="form-check mb-2">
+                    <InputCheckbox id="newIsTransitive"
+                                   class="form-check-input"
+                                   @bind-Value="newRelationTypeModel.IsTransitive" />
+
+                    <label class="form-check-label" for="newIsTransitive">
+                        Transitiv
+                    </label>
+                </div>
+
+                <div class="form-check mb-3">
+                    <InputCheckbox id="newIsHierarchical"
+                                   class="form-check-input"
+                                   @bind-Value="newRelationTypeModel.IsHierarchical" />
+
+                    <label class="form-check-label" for="newIsHierarchical">
+                        Hierarchisch
+                    </label>
+                </div>
+
+                <button type="button"
+                        class="btn btn-success"
+                        disabled="@isCreatingRelationType"
+                        @onclick="CreateRelationTypeAsync">
+                    @(isCreatingRelationType
+                        ? "Wird angelegt ..."
+                        : "RelationType anlegen")
+                </button>
+            </div>
+        }
+
+        <div class="mb-3">
+            <label class="form-label" for="targetEntity">
+                Target Entity
+            </label>
+
+            <select id="targetEntity"
+                    class="form-select"
+                    @bind="formModel.TargetEntityId">
+                <option value="@Guid.Empty">
+                    Bitte auswählen ...
+                </option>
+
+                @foreach (var entity in entities.OrderBy(e => e.Name))
+                {
+                    <option value="@entity.Id">
+                        @entity.Name
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label" for="validFrom">
+                    Gültig ab
+                </label>
+
+                <InputDate id="validFrom"
+                           class="form-control"
+                           @bind-Value="formModel.ValidFrom" />
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="form-label" for="validTo">
+                    Gültig bis
+                </label>
+
+                <InputDate id="validTo"
+                           class="form-control"
+                           @bind-Value="formModel.ValidTo" />
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="context">
+                Context
+            </label>
+
+            <textarea id="context"
+                      class="form-control"
+                      rows="3"
+                      @bind="formModel.Context">
+            </textarea>
+        </div>
+
+        <div class="form-check mb-4">
+            <input id="isInferred"
+                   type="checkbox"
+                   class="form-check-input"
+                   @bind="formModel.IsInferred" />
+
+            <label class="form-check-label" for="isInferred">
+                Abgeleitete Relation (IsInferred)
+            </label>
+        </div>
+
+        <button type="submit"
+                class="btn btn-primary"
+                disabled="@isSaving">
+            @(isSaving ? "Wird gespeichert ..." : "Relation speichern")
+        </button>
+
+        <a href="/relations" class="btn btn-secondary ms-2">
+            Abbrechen
+        </a>
+    </EditForm>
+}
+
+@code {
+    private IReadOnlyList<EntityDto> entities = [];
+    private IReadOnlyList<RelationTypeDto> relationTypes = [];
+
+    private RelationCreateForm formModel = new();
+    private RelationTypeFormModel newRelationTypeModel = new();
+
+    private bool isLoading = true;
+    private bool isSaving;
+    private bool isCreatingRelationType;
+    private bool showNewRelationType;
+
+    private string? loadError;
+    private string? relationTypeError;
+
+    private List<string> errors = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        loadError = null;
+
+        try
+        {
+            // Sequenziell laden, da beide Services denselben
+            // Scoped DbContext verwenden können.
+            entities = await EntityService.GetAllAsync();
+            relationTypes = await RelationTypeService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            loadError =
+                $"Die Stammdaten konnten nicht geladen werden: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ToggleNewRelationType()
+    {
+        showNewRelationType = !showNewRelationType;
+        relationTypeError = null;
+    }
+
+    private async Task CreateRelationTypeAsync()
+    {
+        relationTypeError = null;
+
+        if (string.IsNullOrWhiteSpace(newRelationTypeModel.Name))
+        {
+            relationTypeError =
+                "Bitte einen Namen für den RelationType eingeben.";
+            return;
+        }
+
+        isCreatingRelationType = true;
+
+        try
+        {
+            var displayName =
+                string.IsNullOrWhiteSpace(newRelationTypeModel.DisplayName)
+                    ? newRelationTypeModel.Name.Trim()
+                    : newRelationTypeModel.DisplayName.Trim();
+
+            var request = new CreateRelationTypeRequest(
+                newRelationTypeModel.Name.Trim(),
+                displayName,
+                string.IsNullOrWhiteSpace(newRelationTypeModel.Description)
+                    ? null
+                    : newRelationTypeModel.Description.Trim(),
+                newRelationTypeModel.ParentRelationTypeId,
+                newRelationTypeModel.IsSymmetric,
+                newRelationTypeModel.IsTransitive,
+                newRelationTypeModel.IsHierarchical);
+
+            var created = await RelationTypeService.CreateAsync(request);
+
+            // Nach dem Schreiben die Liste neu laden.
+            relationTypes = await RelationTypeService.GetAllAsync();
+
+            // Den neuen Typ direkt für die Relation auswählen.
+            formModel.RelationTypeId = created.Id;
+
+            newRelationTypeModel = new RelationTypeFormModel();
+            showNewRelationType = false;
+        }
+        catch (Exception ex)
+        {
+            relationTypeError =
+                $"Der RelationType konnte nicht angelegt werden: {ex.Message}";
+        }
+        finally
+        {
+            isCreatingRelationType = false;
+        }
+    }
+
+    private async Task CreateAsync(
+        Microsoft.AspNetCore.Components.Forms.EditContext editContext)
+    {
+        errors.Clear();
+
+        if (formModel.SourceEntityId == Guid.Empty)
+            errors.Add("Bitte eine Source Entity auswählen.");
+
+        if (formModel.TargetEntityId == Guid.Empty)
+            errors.Add("Bitte eine Target Entity auswählen.");
+
+        if (formModel.RelationTypeId == Guid.Empty)
+            errors.Add("Bitte einen RelationType auswählen.");
+
+        if (formModel.SourceEntityId != Guid.Empty &&
+            formModel.SourceEntityId == formModel.TargetEntityId)
+        {
+            errors.Add("Source und Target Entity dürfen nicht identisch sein.");
+        }
+
+        if (formModel.ValidFrom.HasValue &&
+            formModel.ValidTo.HasValue &&
+            formModel.ValidTo.Value < formModel.ValidFrom.Value)
+        {
+            errors.Add("Das Enddatum darf nicht vor dem Startdatum liegen.");
+        }
+
+        if (errors.Count > 0)
+            return;
+
+        isSaving = true;
+
+        try
+        {
+            var request = new CreateRelationRequest(
+                formModel.SourceEntityId,
+                formModel.TargetEntityId,
+                formModel.RelationTypeId,
+                formModel.ValidFrom,
+                formModel.ValidTo,
+                string.IsNullOrWhiteSpace(formModel.Context)
+                    ? null
+                    : formModel.Context.Trim(),
+                formModel.IsInferred);
+
+            await RelationService.CreateAsync(request);
+
+            Navigation.NavigateTo("/relations");
+        }
+        catch (Exception ex)
+        {
+            errors.Add(
+                $"Die Relation konnte nicht gespeichert werden: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private static string GetRelationTypeName(
+        RelationTypeDto relationType)
+    {
+        return string.IsNullOrWhiteSpace(relationType.DisplayName)
+            ? relationType.Name
+            : relationType.DisplayName;
+    }
+
+    private sealed class RelationCreateForm
+    {
+        public Guid SourceEntityId { get; set; }
+        public Guid TargetEntityId { get; set; }
+        public Guid RelationTypeId { get; set; }
+
+        public DateOnly? ValidFrom { get; set; }
+        public DateOnly? ValidTo { get; set; }
+
+        public string? Context { get; set; }
+        public bool IsInferred { get; set; }
+    }
+
+    private sealed class RelationTypeFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string? DisplayName { get; set; }
+        public string? Description { get; set; }
+
+        public Guid? ParentRelationTypeId { get; set; }
+
+        public bool IsSymmetric { get; set; }
+        public bool IsTransitive { get; set; }
+        public bool IsHierarchical { get; set; }
+    }
+}

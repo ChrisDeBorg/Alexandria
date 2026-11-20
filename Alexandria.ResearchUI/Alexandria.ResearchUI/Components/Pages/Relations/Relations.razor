@@ -1,0 +1,134 @@
+﻿@page "/relations"
+@rendermode InteractiveServer
+
+@using Alexandria.Application.Abstractions
+@using Alexandria.Application.Entities
+@using Alexandria.Application.Relations
+
+@inject IRelationService RelationService
+@inject IEntityService EntityService
+@inject IRelationTypeService RelationTypeService
+
+<PageTitle>Relations – Alexandria</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Relations</h1>
+
+    <a href="/relations/create" class="btn btn-primary">
+        Neue Relation
+    </a>
+</div>
+
+<p class="text-muted">
+    Übersicht aller gespeicherten Beziehungen zwischen Entities.
+</p>
+
+@if (isLoading)
+{
+    <p>Relations werden geladen ...</p>
+}
+else if (loadError is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        @loadError
+    </div>
+
+    <button class="btn btn-outline-primary" @onclick="LoadDataAsync">
+        Erneut versuchen
+    </button>
+}
+else
+{
+    <p>@relations.Count Relation(s)</p>
+
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Quelle</th>
+                <th>RelationType</th>
+                <th>Ziel</th>
+                <th>Gültig von</th>
+                <th>Gültig bis</th>
+                <th>Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var relation in relations)
+            {
+                <tr>
+                    <td>@GetEntityName(relation.SourceEntityId)</td>
+                    <td>@GetRelationTypeName(relation.RelationTypeId)</td>
+                    <td>@GetEntityName(relation.TargetEntityId)</td>
+                    <td>@(relation.ValidFrom?.ToString("dd.MM.yyyy") ?? "–")</td>
+                    <td>@(relation.ValidTo?.ToString("dd.MM.yyyy") ?? "–")</td>
+                    <td>
+                        <a href="@($"/relations/{relation.Id}/edit")"
+                           class="btn btn-sm btn-outline-primary">
+                            Bearbeiten
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (!relations.Any())
+    {
+        <p class="text-muted">
+            Noch keine Relations vorhanden.
+        </p>
+    }
+}
+
+@code {
+    private IReadOnlyList<RelationDto> relations = [];
+    private IReadOnlyList<EntityDto> entities = [];
+    private IReadOnlyList<RelationTypeDto> relationTypes = [];
+
+    private bool isLoading = true;
+    private string? loadError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        loadError = null;
+
+        try
+        {
+            relations = await RelationService.GetAllAsync();
+            entities = await EntityService.GetAllAsync();
+            relationTypes = await RelationTypeService.GetAllAsync();
+        }
+        catch (Exception)
+        {
+            loadError = "Die Relations konnten nicht geladen werden. Bitte prüfe die Datenbankverbindung.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetEntityName(Guid id)
+    {
+        return entities.FirstOrDefault(x => x.Id == id)?.Name
+            ?? $"Unbekannte Entity ({id})";
+    }
+
+    private string GetRelationTypeName(Guid id)
+    {
+        var relationType = relationTypes.FirstOrDefault(x => x.Id == id);
+
+        if (relationType is null)
+            return $"Unbekannter RelationType ({id})";
+
+        return string.IsNullOrWhiteSpace(relationType.DisplayName)
+            ? relationType.Name
+            : relationType.DisplayName;
+    }
+}
